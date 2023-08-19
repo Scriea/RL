@@ -1,12 +1,7 @@
-# Excercises and (my) solutions 
-for
-## Reinforcement Learning: An Introduction (2nd edition)
+# Excercises and solutions
+## Reinforcement Learning: An Introduction
 ### Richard S. Sutton and Andrew G. Barto
 The book can be found: https://web.stanford.edu/class/psych209/Readings/SuttonBartoIPRLBook2ndEd.pdf
-
------
-
-Have other solutions or think mine are wrong? Share your thoughts ([open an issue](https://github.com/mharbuz/rlbook-exercises/issues/new))! 
 
 -----
 
@@ -30,5 +25,4 @@ Have other solutions or think mine are wrong? Share your thoughts ([open an issu
 
 [Chapter 8](chapter8.md) - Planning and Learning with Tabular Methods
 
-## Part II - Approximate Solution Methods
 
