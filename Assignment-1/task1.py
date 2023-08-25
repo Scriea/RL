@@ -62,10 +62,11 @@ class Eps_Greedy(Algorithm):
         self.values[arm_index] = new_value
 
 
-# START EDITING HERE
-# You can use this space to define any helper functions that you need
+"""
+Kullback–Leibler divergence
+Reference: https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
 
-# KL-Divergence
+"""
 def KL(p, q):
     if (p == 1):
         return math.log(1/q)
@@ -76,102 +77,89 @@ def KL(p, q):
     return p*math.log(p/q) + (1-p)*math.log((1-p)/(1-q))
 
 
-def kl_ucb_rhs(time, c=3):
+def ucb_solver(time, action, count, c=2):
+    return min(action + math.sqrt(c*math.log(time)/count), 1)
+
+
+def klucb_rhs(time, c=3):
     return math.log(time)+c*math.log(math.log(time))
 
 
-def ucb_rhs(time, action, count):
-    return min(action + math.sqrt(2*math.log(time)/count), 1)
-
-
-
-def solver(mean, count, time, c=3):
-    bound = kl_ucb_rhs(time, c)/count
-    q = mean
-    step = (1-mean)/2
-    while step > 1e-3:
-        if (KL(mean, q + step) <= bound):
+def klucb_solver(time, action, count, c=3, epsilon=1e-3):
+    bound = klucb_rhs(time, c)/count
+    q = action
+    step = (1-action)/2
+    while step > epsilon:
+        if (KL(action, q + step) <= bound):
             q += step
         step /= 2
     return q
 
-# END EDITING HERE
 
+"""
+Belief distribution for Thompson Sampling
 
+"""
+def belief(success, failure):
+    return np.random.beta(success+1, failure+1)
+
+"""
+Upper Confidence Boun(UCB) Algorithm
+"""
 class UCB(Algorithm):
     def __init__(self, num_arms, horizon):
         super().__init__(num_arms, horizon)
-        # You can add any other variables you need here
-        # START EDITING HERE
-        self.time = num_arms
-        self.counts = np.ones(num_arms)
+        self.time = num_arms                # Assuming each arms is initially pulled atleast once
+        self.counts = np.ones(num_arms)     
         self.values = np.zeros(num_arms)
         self.ucb = np.zeros(num_arms)
-        # END EDITING HERE
 
     def give_pull(self):
-        # START EDITING HERE
         return np.argmax(self.ucb)
-        # END EDITING HERE
 
     def get_reward(self, arm_index, reward):
-        # START EDITING HERE
         self.counts[arm_index] += 1
         self.time += 1
         n = self.counts[arm_index]
         value = self.values[arm_index]
-        self.values[arm_index] = ((n - 1) / n) * value + (1 / n) * reward
-        self.ucb = [ucb_rhs(self.time, self.values[i], self.counts[i]) for i in range(self.num_arms)]
-        # END EDITING HERE
+        self.values[arm_index] = ((n - 1) * value + reward)/n
+        self.ucb = [ucb_solver(self.time, self.values[i], self.counts[i]) for i in range(self.num_arms)]
 
 
 class KL_UCB(Algorithm):
     def __init__(self, num_arms, horizon):
         super().__init__(num_arms, horizon)
-        # You can add any other variables you need here
-        # START EDITING HERE
         self.time = 1
         self.counts = np.ones(num_arms)
         self.values = np.ones(num_arms)
         self.ucb = np.zeros(num_arms)
-        # END EDITING HERE
 
     def give_pull(self):
-        # START EDITING HERE
         return np.argmax(self.ucb)
-        # END EDITING HERE
+
 
     def get_reward(self, arm_index, reward):
-        # START EDITING HERE
         self.time += 1
         self.counts[arm_index] += 1
         n = self.counts[arm_index]
         value = self.values[arm_index]
         self.values[arm_index] = ((n - 1) / n) * value + (1 / n) * reward
-        self.ucb = [solver(self.values[index], self.counts[index], self.time)
+        self.ucb = [klucb_solver( self.time, self.values[index], self.counts[index])
                     for index in range(self.num_arms)]
-        # END EDITING HERE
 
 
 class Thompson_Sampling(Algorithm):
     def __init__(self, num_arms, horizon):
         super().__init__(num_arms, horizon)
-        # You can add any other variables you need here
-        # START EDITING HERE
         self.success = np.zeros(num_arms)
         self.failure = np.zeros(num_arms)
-        # END EDITING HERE
 
     def give_pull(self):
-        # START EDITING HERE
-        return np.argmax([np.random.beta(self.success[i]+1, self.failure[i]+1) for i in range(self.num_arms)])
-        # END EDITING HERE
+        return np.argmax([belief(self.success[i], self.failure[i]) for i in range(self.num_arms)])
 
     def get_reward(self, arm_index, reward):
-        # START EDITING HERE
         if (reward == 1):
             self.success[arm_index] += 1
         else:
             self.failure[arm_index] += 1
-        pass
-        # END EDITING HERE
+

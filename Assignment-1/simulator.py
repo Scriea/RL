@@ -9,6 +9,7 @@ from multiprocessing import Pool
 import time
 
 
+
 def single_sim(seed=0, ALGO=Algorithm, PROBS=[0.3, 0.5, 0.7], HORIZON=1000):
     np.random.seed(seed)
     np.random.shuffle(PROBS)
@@ -118,9 +119,9 @@ if __name__ == '__main__':
     probs = [i/20 for i in range(20)]
 
     task1(Eps_Greedy, probs)
-    # task1(UCB, probs)
-    # task1(KL_UCB, probs)
-    # task1(Thompson_Sampling, probs)
+    task1(UCB, probs)
+    task1(KL_UCB, probs)
+    task1(Thompson_Sampling, probs)
 
     #task2(AlgorithmBatched, probs)
 
