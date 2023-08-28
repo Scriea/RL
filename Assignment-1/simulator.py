@@ -137,9 +137,9 @@ if __name__ == '__main__':
 
   task1probs = [i/20 for i in range(20)]
   task1(Eps_Greedy, task1probs, 1)
-  # task1(UCB, task1probs)
-  # task1(KL_UCB, task1probs)
-  # task1(Thompson_Sampling, task1probs)
+  task1(UCB, task1probs)
+  task1(KL_UCB, task1probs)
+  task1(Thompson_Sampling, task1probs)
   # TASK 1 ENDS HERE
 
   # TASK 3 STARTS HERE
