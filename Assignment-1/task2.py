@@ -1,61 +1,85 @@
 """
-NOTE: You are only allowed to edit this file between the lines that say:
-    # START EDITING HERE
-    # END EDITING HERE
-
-You need to complete the following methods:
-    - give_pull(self): This method is called when the algorithm needs to
-        select the arms to pull for the next round. The method should return
-        two arrays: the first array should contain the indices of the arms
-        that need to be pulled, and the second array should contain how many
-        times each arm needs to be pulled. For example, if the method returns
-        ([0, 1], [2, 3]), then the first arm should be pulled 2 times, and the
-        second arm should be pulled 3 times. Note that the sum of values in
-        the second array should be equal to the batch size of the bandit.
-
-    - get_reward(self, arm_rewards): This method is called just after the
-        give_pull method. The method should update the algorithm's internal
-        state based on the rewards that were received. arm_rewards is a dictionary
-        from arm_indices to a list of rewards received. For example, if the
-        give_pull method returned ([0, 1], [2, 3]), then arm_rewards will be
-        {0: [r1, r2], 1: [r3, r4, r5]}. (r1 to r5 are each either 0 or 1.)
+You need to write code to plot the graphs as required in task2 of the problem statement:
+    - You can edit any code in this file but be careful when modifying the simulation specific code. 
+    - The simulation framework as well as the BernoulliBandit implementation for this task have been separated from the rest of the assignment code and is contained solely in this file. This will be useful in case you would like to collect more information from runs rather than just regret.
 """
 
 import numpy as np
-
+from multiprocessing import Pool
+from task1 import Eps_Greedy, UCB, KL_UCB
+import matplotlib.pyplot as plt
 # START EDITING HERE
 # You can use this space to define any helper functions that you need.
-
-
 # END EDITING HERE
 
+class BernoulliArmTask2:
+  def __init__(self, p):
+    self.p = p
 
-class AlgorithmBatched:
-    def __init__(self, num_arms, horizon, batch_size):
-        self.num_arms = num_arms
-        self.horizon = horizon
-        self.batch_size = batch_size
-        assert self.horizon % self.batch_size == 0, "Horizon must be a multiple of batch size"
-        # START EDITING HERE
-        self.success = np.zeros((num_arms))
-        self.failure = np.zeros((num_arms))
-        self.samples = np.zeros((num_arms, self.batch_size))
-        # Add any other variables you need here
-        # END EDITING HERE
+  def pull(self, num_pulls=None):
+    return np.random.binomial(1, self.p, num_pulls)
 
-    def give_pull(self):
-        self.samples = np.array([np.random.beta(
-            self.success[i]+1, self.failure[i]+1, size=self.batch_size) for i in range(self.num_arms)])
-        # print(self.samples)
-        temp = (np.argsort(self.samples.ravel())
-                [-self.batch_size:]/self.batch_size).astype(int)
+class BernoulliBanditTask2:
+  def __init__(self, probs=[0.3, 0.5, 0.7],):
+    self.__arms = [BernoulliArmTask2(p) for p in probs]
+    self.__max_p = max(probs)
+    self.__regret = 0
 
-        return np.unique(temp, return_counts=True)
+  def pull(self, index):
+    reward = self.__arms[index].pull()
+    self.__regret += self.__max_p - reward
+    return reward
 
-# END EDITING HERE
+  def regret(self):
+    return self.__regret
+  
+  def num_arms(self):
+    return len(self.__arms)
 
-    def get_reward(self, arm_rewards):
-        for arm_index in arm_rewards:
-            self.success[arm_index] += (arm_rewards[arm_index] == 1).sum()
-            self.failure[arm_index] += (arm_rewards[arm_index] == 0).sum()
-        # END EDITING HERE
+
+def single_sim_task2(seed=0, ALGO=Eps_Greedy, PROBS=[0.3, 0.5, 0.7], HORIZON=1000):
+  np.random.seed(seed)
+  np.random.shuffle(PROBS)
+  bandit = BernoulliBanditTask2(probs=PROBS)
+  algo_inst = ALGO(num_arms=len(PROBS), horizon=HORIZON)
+  for t in range(HORIZON):
+    arm_to_be_pulled = algo_inst.give_pull()
+    reward = bandit.pull(arm_to_be_pulled)
+    algo_inst.get_reward(arm_index=arm_to_be_pulled, reward=reward)
+  return bandit.regret()
+
+def simulate_task2(algorithm, probs, horizon, num_sims=50):
+  """simulates algorithm of class Algorithm
+  for BernoulliBandit bandit, with horizon=horizon
+  """
+  
+  def multiple_sims(num_sims=50):
+    with Pool(10) as pool:
+      sim_out = pool.starmap(single_sim_task2,
+        [(i, algorithm, probs, horizon) for i in range(num_sims)])
+    return sim_out 
+
+  sim_out = multiple_sims(num_sims)
+  regrets = np.mean(sim_out)
+
+  return regrets
+
+def task2(algorithm, horizon, p1s, p2s, num_sims=50):
+    """generates the data for task2
+    """
+    probs = [[p1s[i], p2s[i]] for i in range(len(p1s))]
+
+    regrets = []
+    for prob in probs:
+        regrets.append(simulate_task2(algorithm, prob, horizon, num_sims))
+
+    return regrets
+
+if __name__ == '__main__':
+  # EXAMPLE CODE
+  task2p1s = [0.2, 0.3]
+  task2p2s = [0.1, 0.2]
+  regrets = task2(Eps_Greedy, 1000, task2p1s, task2p2s, 1)
+  print(regrets)
+  # INSERT YOUR CODE FOR PLOTTING HERE
+  pass
