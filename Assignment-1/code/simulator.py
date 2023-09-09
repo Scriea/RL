@@ -58,7 +58,7 @@ def simulate(algorithm, probs, horizon, num_sims=50):
   sim_out = multiple_sims(num_sims)
   regrets = np.mean(sim_out)
 
-  return regrets
+  return regrets 
 
 def simulate_faulty(algorithm, probs, fault, horizon, num_sims=50):
   """simulates algorithm of class Algorithm

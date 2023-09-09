@@ -22,9 +22,17 @@ This file contains the MultiBanditsAlgo class. Here are the method details:
 """
 
 import numpy as np
+import math
 
 # START EDITING HERE
 # You can use this space to define any helper functions that you need
+def ucb_solver(time, action, count, c=2):
+    if count==0:
+        return 1
+    return min(action + math.sqrt(c*math.log(time)/count), 1)
+
+def belief(success, failure):
+    return np.random.beta(success+1, failure+1)
 # END EDITING HERE
 
 
@@ -34,16 +42,21 @@ class MultiBanditsAlgo:
         self.num_arms = num_arms
         self.horizon = horizon
         # START EDITING HERE
-        
+        self.success = np.zeros(num_arms)
+        self.failure = np.zeros(num_arms)
         # END EDITING HERE
     
     def give_pull(self):
         # START EDITING HERE
-        raise NotImplementedError
+        return np.argmax([belief(self.success[i], self.failure[i]) 
+                          for i in range(self.num_arms)])
         # END EDITING HERE
     
     def get_reward(self, arm_index, set_pulled, reward):
         # START EDITING HERE
-        raise NotImplementedError
+        if (reward == 1):
+            self.success[arm_index] += 1
+        else:
+            self.failure[arm_index] += 1
         # END EDITING HERE
 

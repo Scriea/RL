@@ -90,10 +90,8 @@ def klucb_rhs(time, count, c=3):
 def klucb_solver(time, action, count, c=0):
     if count==0:
         return 1
-    
     bound = klucb_rhs(time, count, c)
     low, high = action, 1
-
     while high-low>=1e-4:
         mid = (low + high) / 2
         div = KL(action, mid)
@@ -104,7 +102,6 @@ def klucb_solver(time, action, count, c=0):
         else:
             low = mid
     return low
-
 
 """
 Belief distribution for Thompson Sampling
@@ -117,17 +114,18 @@ def belief(success, failure):
 class UCB(Algorithm):
     def __init__(self, num_arms, horizon):
         super().__init__(num_arms, horizon)
-        self.time = num_arms                
+        self.time = 1                
         self.counts = np.zeros(num_arms)     
         self.values = np.ones(num_arms)
         self.ucb = np.ones(num_arms)
 
     def give_pull(self):
+        # Initially pulling in Round Robin Fashion till each arm is pulled atleast once
         if 0 in self.counts:
             for arm, count in enumerate(self.counts):
                 if count==0:
                     return arm
-            
+                
         return np.argmax(self.ucb)
 
     def get_reward(self, arm_index, reward):
@@ -136,7 +134,8 @@ class UCB(Algorithm):
         n = self.counts[arm_index]
         value = self.values[arm_index]
         self.values[arm_index] = ((n - 1) * value + reward)/n
-        self.ucb = [ucb_solver(self.time, self.values[i], self.counts[i]) for i in range(self.num_arms)]
+        self.ucb = [ucb_solver(self.time, self.values[i], self.counts[i]) 
+                    for i in range(self.num_arms)]
 
 
 class KL_UCB(Algorithm):
@@ -172,7 +171,8 @@ class Thompson_Sampling(Algorithm):
         self.failure = np.zeros(num_arms)
 
     def give_pull(self):
-        return np.argmax([belief(self.success[i], self.failure[i]) for i in range(self.num_arms)])
+        return np.argmax([belief(self.success[i], self.failure[i]) 
+                          for i in range(self.num_arms)])
 
     def get_reward(self, arm_index, reward):
         if (reward == 1):
