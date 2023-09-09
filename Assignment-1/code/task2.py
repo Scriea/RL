@@ -89,6 +89,7 @@ if __name__ == '__main__':
   task2p2s = [0.1, 0.2]
   regrets = task2(Eps_Greedy, 1000, task2p1s, task2p2s, 1)
   print(regrets)
+  
   # INSERT YOUR CODE FOR PLOTTING HERE
   task2p1s = np.linspace(0.9, 0.9, 19)
   task2p2s = np.linspace(0, 0.9, 19)
@@ -100,7 +101,7 @@ if __name__ == '__main__':
   task2p1s = 0.1 + task2p2s
   regrets_UCB = task2(UCB, 30000, task2p1s, task2p2s)
   regrets_KL_UCB = task2(KL_UCB, 30000, task2p1s, task2p2s)
-
+  print(regrets_KL_UCB)
   task2_plot(regrets_UCB, task2p2s, "p2", "Regret", "Task2b_UCB")
   task2_plot(regrets_KL_UCB, task2p2s, "p2", "Regret", "Task2b_KL_UCB")
   

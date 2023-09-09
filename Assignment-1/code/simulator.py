@@ -113,8 +113,12 @@ def task3(algorithm, probs, fault, num_sims=50):
   rewards = []
   for horizon in horizons:
     rewards.append(simulate_faulty(algorithm, probs, fault, horizon, num_sims))
-
   print(rewards)
+  plt.plot(horizons, rewards)
+  plt.title("Regret vs Horizon")
+  plt.savefig("task3-{}-{}.png".format(algorithm.__name__, time.strftime("%Y%m%d-%H%M%S")))
+  plt.clf()
+
 
 def task4(algorithm, probs, num_sims=50):
   """generates the plots and rewards for task4
@@ -135,20 +139,20 @@ if __name__ == '__main__':
   # bandit instance:
   # 20 arms with uniformly distributed means
 
-  task1probs = [i/20 for i in range(20)]
-  task1(Eps_Greedy, task1probs, 1)
-  task1(UCB, task1probs)
-  task1(KL_UCB, task1probs)
-  task1(Thompson_Sampling, task1probs)
+  # task1probs = [i/20 for i in range(20)]
+  # task1(Eps_Greedy, task1probs, 1)
+  # task1(UCB, task1probs)
+  # task1(KL_UCB, task1probs)
+  # task1(Thompson_Sampling, task1probs)
   # TASK 1 ENDS HERE
 
   # TASK 3 STARTS HERE
   # Note - all the results generated for task 3 shall use a fault 
   # probability of 0.2
 
-  # task3probs = [i/20 for i in range(20)]
-  # fault = 0.2
-  # task3(FaultyBanditsAlgo, task3probs, fault)
+  task3probs = [i/20 for i in range(20)]
+  fault = 0.2
+  task3(FaultyBanditsAlgo, task3probs, fault)
   # TASK 3 ENDS HERE
 
   # TASK 4 STARTS HERE
