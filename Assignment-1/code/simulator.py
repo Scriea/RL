@@ -114,10 +114,10 @@ def task3(algorithm, probs, fault, num_sims=50):
   for horizon in horizons:
     rewards.append(simulate_faulty(algorithm, probs, fault, horizon, num_sims))
   print(rewards)
-  plt.plot(horizons, rewards)
-  plt.title("Regret vs Horizon")
-  plt.savefig("task3-{}-{}.png".format(algorithm.__name__, time.strftime("%Y%m%d-%H%M%S")))
-  plt.clf()
+  # plt.plot(horizons, rewards)
+  # plt.title("Regret vs Horizon")
+  # plt.savefig("task3-{}-{}.png".format(algorithm.__name__, time.strftime("%Y%m%d-%H%M%S")))
+  # plt.clf()
 
 
 def task4(algorithm, probs, num_sims=50):
@@ -129,6 +129,10 @@ def task4(algorithm, probs, num_sims=50):
     rewards.append(simulate_multi(algorithm, probs, horizon, num_sims))
 
   print(rewards)
+  plt.plot(horizons, rewards)
+  plt.title("Regret vs Horizon")
+  plt.savefig("task3-{}-{}.png".format(algorithm.__name__, time.strftime("%Y%m%d-%H%M%S")))
+  plt.clf()
   
 
 if __name__ == '__main__':
@@ -139,11 +143,11 @@ if __name__ == '__main__':
   # bandit instance:
   # 20 arms with uniformly distributed means
 
-  # task1probs = [i/20 for i in range(20)]
-  # task1(Eps_Greedy, task1probs, 1)
-  # task1(UCB, task1probs)
-  # task1(KL_UCB, task1probs)
-  # task1(Thompson_Sampling, task1probs)
+  task1probs = [i/20 for i in range(20)]
+  task1(Eps_Greedy, task1probs, 1)
+  task1(UCB, task1probs)
+  task1(KL_UCB, task1probs)
+  task1(Thompson_Sampling, task1probs)
   # TASK 1 ENDS HERE
 
   # TASK 3 STARTS HERE
@@ -160,10 +164,10 @@ if __name__ == '__main__':
   # bandit instance:
   # 2 bandits having 20 arms with uniformly distributed means 
 
-  # task4probs = [[0.15, 0.05, 0.5, 0.6, 0.35, 0.85, 0.75, 0.3, 0.1, 
-  # 0.45, 0.0, 0.55, 0.9, 0.2, 0.8, 0.65, 0.95, 0.4, 0.7, 0.25], [0.3, 
-  # 0.55, 0.5, 0.0, 0.2, 0.25, 0.95, 0.1, 0.8, 0.6, 0.05, 0.45, 0.7, 
-  # 0.65, 0.35, 0.4, 0.15, 0.85, 0.75, 0.9]]
-  # task4(MultiBanditsAlgo, task4probs)
+  task4probs = [[0.15, 0.05, 0.5, 0.6, 0.35, 0.85, 0.75, 0.3, 0.1, 
+  0.45, 0.0, 0.55, 0.9, 0.2, 0.8, 0.65, 0.95, 0.4, 0.7, 0.25], [0.3, 
+  0.55, 0.5, 0.0, 0.2, 0.25, 0.95, 0.1, 0.8, 0.6, 0.05, 0.45, 0.7, 
+  0.65, 0.35, 0.4, 0.15, 0.85, 0.75, 0.9]]
+  task4(MultiBanditsAlgo, task4probs)
   #TASK 4 ENDS HERE
 

@@ -40,7 +40,7 @@ def ucb_solver(time, action, count, c=2):
         return 1
     return min(action + math.sqrt(c*math.log(time)/count), 1)
 
-def klucb_rhs(time, count, c=3):
+def klucb_rhs(time, count, c=0):
     return (math.log(time)+c*math.log(math.log(time)))/count
 
 

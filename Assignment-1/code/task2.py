@@ -9,11 +9,11 @@ from multiprocessing import Pool
 from task1 import Eps_Greedy, UCB, KL_UCB
 import matplotlib.pyplot as plt
 # START EDITING HERE
-# You can use this space to define any helper functions that you need.
-
 def task2_plot(regrets, p, x_label="", y_label="", name=""):
-  plt.plot(p, regrets)
+  plt.figure(figsize=(12, 10))
+  plt.plot(p, regrets, marker='o')
   plt.title("{} vs {}".format(y_label, x_label))
+  plt.xticks(p)
   plt.savefig("{}.png".format(name))
   plt.clf()
 
