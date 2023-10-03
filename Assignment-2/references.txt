@@ -1,0 +1,2 @@
+https://coin-or.github.io/pulp/
+https://arxiv.org/ftp/arxiv/papers/1302/1302.4971.pdf
