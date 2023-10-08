@@ -5,7 +5,7 @@ np.random.seed(37)
 
 ## Helper Classe
 class MDP:
-    def __init__(self, args, pol_args=None):
+    def __init__(self, args, pol=None):
         self.n = args[0]            # No. of States
         self.k = args[1]            # No. of Actions
         self.E = args[2]            # List of end states
@@ -13,8 +13,10 @@ class MDP:
         self.R = args[4]            # Reward Function
         self.type = args[5]         # MDP Type (continuing/episodic)
         self.discount = args[6]     # Discount factor (γ)
-        if pol_args:
-            pass                    # Policy
+        self.pol = None 
+        if pol:                     # Policy Evaluation, π
+            self.pol = read_pol(pol)  
+                             
     
     def VI(self, epsilon=1e-11) -> tuple:
         """
@@ -40,7 +42,7 @@ class MDP:
         Approach - I
         Uses less memory but was slow
         """
-        # P = np.zeros((self.n), dtype= int)      # Policy Function, π
+        # P = np.zeros((self.n), dtype= int)      # Policy Function, 
         # V_t = np.full((self.n), - np.inf, dtype= float)  
         # for s in range(self.n):
         #     for a in range(self.k):
@@ -61,31 +63,6 @@ class MDP:
             #     break
             # V = V_t
         # return (V, P)
-
-    def EvaluatePolicy(self, pol, epsilon=1e-11):
-        """ 
-        Policy Evaluation 
-        Returns Policy Value Functions, V_π for a given policy π
-        """    
-        V = np.random.random_sample(self.n)
-        P = np.array(read_pol(pol), dtype= int)
-        while True: 
-            V_t = np.zeros(self.n)               
-            for s in range(self.n):
-                if s in self.E:
-                    V[s] = 0     
-
-            for s in range(self.n):   
-                for s_dash in range(self.n): 
-                    V_t[s] += (self.R[s][P[s]][s_dash] + V[s_dash]*self.discount)*self.T[s][P[s]][s_dash]
-                if s in self.E:
-                    V_t[s]=0
-
-            if np.linalg.norm(V_t - V) < epsilon:
-                V = V_t
-                break
-            V = V_t
-        return V, P
     
     def LP(self) -> tuple:
         """
@@ -115,11 +92,43 @@ class MDP:
     
     def HPI(self) -> tuple:
         "Howard's Policy Iterantion"
-        pass    
+        P = np.zeros((self.n), dtype= int)
+        V, _ = self.EvaluatePolicy(policy=P)                                   # Value function candidate, Vπ
+        P_dash = np.argmax(np.sum(self.T * (self.R + self.discount * V), axis=2), axis=1)
+        while not np.array_equal(P_dash, P):
+            P = P_dash
+            V, _ = self.EvaluatePolicy(policy=P)
+            P_dash = np.argmax(np.sum(self.T * (self.R + self.discount * V), axis=2), axis=1)
+        return V, P
+   
+    def EvaluatePolicy(self, policy, epsilon=1e-11):
+        """ 
+        Policy Evaluation 
+        Returns Policy Value Functions, V_π for a given policy π
+        """    
+        V = np.random.random_sample(self.n)
+        P = policy
+        while True: 
+            V_t = np.zeros(self.n)               
+            for s in range(self.n):
+                if s in self.E:
+                    V[s] = 0     
 
-    def solver(self, algo, pol=None):
-        if pol:
-            return self.EvaluatePolicy(pol)
+            for s in range(self.n):   
+                for s_dash in range(self.n): 
+                    V_t[s] += (self.R[s][P[s]][s_dash] + V[s_dash]*self.discount)*self.T[s][P[s]][s_dash]
+                if s in self.E:
+                    V_t[s]=0
+
+            if np.linalg.norm(V_t - V) < epsilon:
+                V = V_t
+                break
+            V = V_t
+        return V, P
+
+    def solver(self, algo):
+        if self.pol:
+            return self.EvaluatePolicy(policy=self.pol)
         else:
             if algo.lower() == 'hpi':
                 return self.HPI()
@@ -159,6 +168,7 @@ def read_pol(path) -> list:
             action = f.readline()
     return policy
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -175,7 +185,7 @@ if __name__ == "__main__":
     PATH_POL = args.policy
 
     mdp_args = read_MDP(PATH_MDP)
-    mdp = MDP(args=mdp_args)
-    V, P = mdp.solver(algo=ALGO, pol=PATH_POL)
+    mdp = MDP(args=mdp_args, pol=PATH_POL)
+    V, P = mdp.solver(algo=ALGO)
     for i in range(len(V)):
         print(f"{V[i]:.6f} {P[i]}")
