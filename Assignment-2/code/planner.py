@@ -90,15 +90,16 @@ class MDP:
         P = np.argmax(np.sum(self.T * (self.R + self.discount * V), axis=2), axis=1)
         return V, P
     
-    def HPI(self) -> tuple:
+    def HPI(self, epsilon = 1e-11) -> tuple:
         "Howard's Policy Iterantion"
-        P = np.zeros((self.n), dtype= int)
-        V, _ = self.EvaluatePolicy(policy=P)                                   # Value function candidate, Vπ
-        P_dash = np.argmax(np.sum(self.T * (self.R + self.discount * V), axis=2), axis=1)
-        while not np.array_equal(P_dash, P):
-            P = P_dash
+        P = np.zeros((self.n), dtype= int)                  # Initialize 
+        while True:
             V, _ = self.EvaluatePolicy(policy=P)
             P_dash = np.argmax(np.sum(self.T * (self.R + self.discount * V), axis=2), axis=1)
+            if np.linalg.norm(P_dash -P) < epsilon:
+                P = P_dash
+                break
+            P = P_dash
         return V, P
    
     def EvaluatePolicy(self, policy, epsilon=1e-11):
