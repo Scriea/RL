@@ -3,7 +3,6 @@ import numpy as np
 from pulp import *
 np.random.seed(37)
 
-
 ## Helper Classe
 class MDP:
     def __init__(self, args, pol_args=None):
@@ -13,86 +12,106 @@ class MDP:
         self.T = args[3]            # Transisition Function/Probabilty
         self.R = args[4]            # Reward Function
         self.type = args[5]         # MDP Type (continuing/episodic)
-        self.discount = args[6]     # MDP Discount factor(gamma)
+        self.discount = args[6]     # Discount factor (γ)
         if pol_args:
             pass                    # Policy
-
+    
     def VI(self, epsilon=1e-11) -> tuple:
         """
-        Value Iteration
+        Value Iteration,
+        Approach - II
         """
-        # P = np.zeros((self.n), dtype= int)      # Policy Function, π
         V = np.random.random_sample(self.n)     # Value Function Initialization, Vo
-        # t = 0
         while True:    
-            # t+=1
             temp = np.sum(self.T*(self.R + self.discount*V), axis=2)
             V_temp = np.max(temp,axis=1)
-            P_temp = np.argmax(temp, axis=1)
+            P_temp = np.argmax(temp, axis=1)    # Optimal policy            
             for s in range(self.n):
                 if s in self.E:
                     V_temp[s] = 0
                     V[s] = 0
             if np.linalg.norm(V_temp - V)<epsilon:
-                # print(t)
                 return V_temp, P_temp
             V = V_temp
 
-            """
-            This code was working but was vary slow,I used 
-            numpy functions for calculations to improve speed.
-            """
-            # V_t = np.full((self.n), 2e-308, dtype= float)  
-            # for s in range(self.n):
-            #     for a in range(self.k):
-                    # temp=0
-                    # for s_dash in range(self.n):
-                    #     if s_dash in self.E:
-                    #         temp += self.T[s][a][s_dash]*(self.R[s][a][s_dash])
-                    #     else:
-                    #         temp += self.T[s][a][s_dash]*(self.R[s][a][s_dash] + self.discount * V[s_dash])
-                    #     #V_t[s] = max(temp, V_t[s])
-                    # if temp > V_t[s]:
-                    #     P[s] = a
-                    #     V_t[s] = temp
+ 
+    # def VI(self, epsilon=1e-11):
+        """
+        Approach - I
+        Uses less memory but was slow
+        """
+        # P = np.zeros((self.n), dtype= int)      # Policy Function, π
+        # V_t = np.full((self.n), - np.inf, dtype= float)  
+        # for s in range(self.n):
+        #     for a in range(self.k):
+                # temp=0
+                # for s_dash in range(self.n):
+                #     if s_dash in self.E:
+                #         temp += self.T[s][a][s_dash]*(self.R[s][a][s_dash])
+                #     else:
+                #         temp += self.T[s][a][s_dash]*(self.R[s][a][s_dash] + self.discount * V[s_dash])
+                # if temp > V_t[s]:
+                #     P[s] = a
+                #     V_t[s] = temp
             # for s in range(self.n):
             #     if s in self.E:
             #         V_t[s]=0
-
-            # print(V_t)     
-            # print(V,P)
             # if np.linalg.norm(V_t- V) < epsilon:
             #     V = V_t
             #     break
             # V = V_t
-        # print(t)
         # return (V, P)
+
+    def EvaluatePolicy(self, pol, epsilon=1e-11):
+        """ 
+        Policy Evaluation 
+        Returns Policy Value Functions, V_π for a given policy π
+        """    
+        V = np.random.random_sample(self.n)
+        P = np.array(read_pol(pol), dtype= int)
+        while True: 
+            V_t = np.zeros(self.n)               
+            for s in range(self.n):
+                if s in self.E:
+                    V[s] = 0     
+
+            for s in range(self.n):   
+                for s_dash in range(self.n): 
+                    V_t[s] += (self.R[s][P[s]][s_dash] + V[s_dash]*self.discount)*self.T[s][P[s]][s_dash]
+                if s in self.E:
+                    V_t[s]=0
+
+            if np.linalg.norm(V_t - V) < epsilon:
+                V = V_t
+                break
+            V = V_t
+        return V, P
     
     def LP(self) -> tuple:
         """
-        Linear Programming
+        Linear Programming for MDP
         """
-        prob = LpProblem("MDP", LpMaximize)
-        decision_vars = [ LpVariable("V"+str(i)) for i in range(self.n)]            # Decision Variables
-        
-        objective = lpSum(decision_vars)                                            # Objective Function
+        V = np.zeros((self.n), dtype= float)
+        P = np.zeros((self.n), dtype= int)
+        prob = LpProblem("MDP", LpMinimize)
+        decision_vars = [ LpVariable("V"+ str(i)) for i in range(self.n)]           # Decision Variables i.e. V1, V2, ...        
+        objective = lpSum(decision_vars)                                            # Objective Function i.e  Σ(V)
         prob += objective
 
-        constraints = []
+        # Adding Constraints
         for s in range(self.n):
             for a in range(self.k):
-                for s_dash in range(self.n):
-                    pass
-
-        optimization_result = prob.solve()
-
-        assert optimization_result == LpStatusOptimal
-        print("Status:", LpStatus[prob.status])
-        print("Optimal Solution to the problem: ", value(prob.objective))
-        print ("Individual decision_variables: ")
-        for v in prob.variables():
-            print(v.name, "=", v.varValue)
-        return (self.n)
+                prob += decision_vars[s] >= (lpSum( [self.T[s][a][s_dash]*self.R[s][a][s_dash] if s_dash in self.E else 
+                                                  self.T[s][a][s_dash]*(self.R[s][a][s_dash] + self.discount*decision_vars[s_dash]) 
+                                                    for s_dash in range(self.n)])) 
+        optimization_res = prob.solve(PULP_CBC_CMD(msg=False))
+        for i in range(self.n):
+            V[i] = decision_vars[i].varValue
+            if i in self.E:
+                V[i] = 0
+    
+        P = np.argmax(np.sum(self.T * (self.R + self.discount * V), axis=2), axis=1)
+        return V, P
     
     def HPI(self) -> tuple:
         "Howard's Policy Iterantion"
@@ -100,20 +119,15 @@ class MDP:
 
     def solver(self, algo, pol=None):
         if pol:
-            return self.PE(pol)
+            return self.EvaluatePolicy(pol)
         else:
             if algo.lower() == 'hpi':
                 return self.HPI()
             elif algo.lower() =='lp':
                 return self.LP()
-            else:                       ## Default setting
+            else:                                                                   # Default setting
                 return self.VI()
-    def EvaluatePolicy(self, pol):
-        """ 
-        Policy Evaluation 
-        Returns Policy Value Functions, V_π for a given policy π
-        """    
-        pass
+        
 
 ## Helper Functions
 
@@ -136,6 +150,15 @@ def read_MDP(path) -> list:
     f.close()
     return [n, k, e, T, R, mdptype, discount]
 
+def read_pol(path) -> list:
+    policy = []
+    with open(path) as f:
+        action = f.readline()
+        while action:
+            policy.append(int(action))
+            action = f.readline()
+    return policy
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -153,6 +176,6 @@ if __name__ == "__main__":
 
     mdp_args = read_MDP(PATH_MDP)
     mdp = MDP(args=mdp_args)
-    V, P = mdp.solver(algo=ALGO)
+    V, P = mdp.solver(algo=ALGO, pol=PATH_POL)
     for i in range(len(V)):
         print(f"{V[i]:.6f} {P[i]}")
