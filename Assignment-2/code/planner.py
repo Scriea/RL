@@ -138,7 +138,6 @@ class MDP:
             else:                                                                   # Default setting
                 return self.VI()
         
-
 ## Helper Functions
 
 def read_MDP(path) -> list:
