@@ -1,5 +1,4 @@
 https://coin-or.github.io/pulp/technical/index.html
-https://arxiv.org/ftp/arxiv/papers/1302/1302.4971.pdf
 https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html
 https://numpy.org/doc/stable/reference/random/generated/numpy.random.random_sample.html
 https://www.youtube.com/watch?v=7yZ5xxdkTb8, Pulp Reference given in PS

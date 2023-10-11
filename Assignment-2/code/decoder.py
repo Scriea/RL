@@ -1,24 +1,8 @@
-import argparse
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--opponent", required= True, type= str,
-                    help="Path to opponent")
-parser.add_argument("--p", type=float, required=True,
-                    help="p")
-parser.add_argument("--q", type=float, required=True,
-                    help="q")
-
-args = parser.parse_args()
-PATH_OPP = args.opponent
+import numpy as np
 
 
-print("numStates 4096")
-print("numActions 10")
+T = 10*np.ones((10,5,10))
+R = np.ones((10,5,10))
+V = np.arange(0, 10)
 
-## Endstates
-
-##Transitions
-
-
-print('mdptype episodic')
-print('discount 1.0')
+print(np.max(np.sum(T*(R+V), axis=2), axis=1))

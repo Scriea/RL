@@ -3,7 +3,6 @@ import numpy as np
 from pulp import *
 np.random.seed(37)
 
-## Helper Classe
 class MDP:
     def __init__(self, args, pol=None):
         self.n = args[0]            # No. of States
@@ -81,7 +80,7 @@ class MDP:
                 prob += decision_vars[s] >= (lpSum( [self.T[s][a][s_dash]*self.R[s][a][s_dash] if s_dash in self.E else 
                                                   self.T[s][a][s_dash]*(self.R[s][a][s_dash] + self.discount*decision_vars[s_dash]) 
                                                     for s_dash in range(self.n)])) 
-        optimization_res = prob.solve(PULP_CBC_CMD(msg=False))
+        prob.solve(PULP_CBC_CMD(msg=False))
         for i in range(self.n):
             V[i] = decision_vars[i].varValue
             if i in self.E:
