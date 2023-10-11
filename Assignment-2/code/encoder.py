@@ -28,6 +28,8 @@ posToCoor= {"01": (0,0),
             "16": (3,3)
             }
 
+def check_tackling(pos)-> bool:
+    pass
 
 def check_collinear(pos)-> bool:
     pos_P1 = posToCoor(pos[0:2])
@@ -98,67 +100,110 @@ if __name__ == "__main__":
     for s in range(1, 8193):
         opp_move_prob = opp_move[s-1]
         for a in range(10):
-            # Moving Player 1
-            if a in [0,1,2,3]:  
-                # Player has ball - tackling possible                        
-                pos = stateTopos[s]
-                pos = numTopos(int(pos[:2])+movePosnum[a]) + pos[2:]
-                if pos[6]=="1":                         
-                    for i, prob in enumerate(opp_move_prob):
-                        new_pos = pos[:4] + numTopos(int(pos[4:6]) + movePosnum[i]) + pos[6:]
-                        if not pos in posTostate.keys():               # Episode Ends, Player has gone out of the field
-                            s_dash = 0  
-                        else:                
-                            s_dash = posTostate[new_pos]
-                        T[s][a][s_dash] = (1-2*p)*prob                 # Succesfull movement
-                    T[s][a][0] = 2*p                                   # Losing the ball directly
+            pos = stateTopos[s]
 
-                # Player without ball
+            """
+            Moving Player 1
+            """ 
+            if a in [0,1,2,3]:  
+                pos = numTopos(int(pos[:2])+movePosnum[a]) + pos[2:]
+                if pos not in posTostate.keys():
+                    T[s][a][0] = 1
+                    R[s][a][0] = -1
+                    print(f"transition {s} {a} 0 {R[s][a][0]} {T[s][a][0]}")
+
                 else:
-                    for i, prob in enumerate(opp_move_prob):
-                        new_pos = pos[:4] + numTopos(int(pos[4:6]) + movePosnum[i]) + pos[6:]
-                        if not pos in posTostate.keys():            # Episode Ends, Player has gone out of the field
-                            s_dash = 0  
-                        else:                
+                    #Player moving with Ball                    
+                    if pos[6]=="1":         
+                        for i, prob in enumerate(opp_move_prob):
+                            new_pos = pos[:4] + numTopos(int(pos[4:6]) + movePosnum[i]) + pos[6:]
+                            if new_pos not in posTostate.keys():
+                                continue
+
+                            if check_tackling(pos, new_pos):                    # Tackling Condition
+                                pass
+                            else:                
+                                s_dash = posTostate[new_pos]
+                                T[s][a][s_dash] = (1-2*p)*prob                  # Succesfull movement
+                                print(f"transition {s} {a} {s_dash} {R[s][a][s_dash]} {T[s][a][s_dash]}")
+                        T[s][a][0] = 2*p                                        # Losing the ball directly
+                        T[s][a][0] = -1
+                        print(f"transition {s} {a} 0 {R[s][a][0]} {T[s][a][0]}")
+
+                    # Player moving without ball
+                    else:
+                        for i, prob in enumerate(opp_move_prob):
+                            new_pos = pos[:4] + numTopos(int(pos[4:6]) + movePosnum[i]) + pos[6:]
+                            if not new_pos in posTostate.keys():                # Episode Ends, Player has gone out of the field
+                                continue
+                       
                             s_dash = posTostate[new_pos]
-                        T[s][a][s_dash] = (1-p)*prob                # Succesfull movement
-                    T[s][a][0] = p                                  # Losing the ball directly
-            
-            # Moving Player 2       
+                            T[s][a][s_dash] = (1-p)*prob                        # Succesfull movement
+                            print(f"transition {s} {a} {s_dash} {R[s][a][s_dash]} {T[s][a][s_dash]}")
+                        T[s][a][0] = p                                          # Losing the ball directly
+                        print(f"transition {s} {a} 0 {R[s][a][0]} {T[s][a][0]}")
+                """
+                Motion Player 2
+                """     
             elif a in [4,5,6,7]:                            
-                pos = stateTopos[s]
-                pos = numTopos(int(pos[:2])+movePosnum[a-4]) + pos[2:]
-                if pos[6]=="2":                                         # Player has ball
-                    for i, prob in enumerate(opp_move_prob):
-                        if True:                                        # Tackling Condition
-                            pass                        
-                        new_pos = pos[:4] + numTopos(int(pos[4:6]) + movePosnum[i]) + pos[6:]
-                        if not pos in posTostate.keys():               # Episode Ends, Player has gone out of the field
-                            s_dash = 0  
-                        else:                
-                            s_dash = posTostate[new_pos]
-                        T[s][a][s_dash] = (1-2*p)*prob                 # Succesfull movement
-                    T[s][a][0] = 2*p                                   # Losing the ball directly
-                
+                pos = pos[:2] + numTopos(int(pos[2:4])+movePosnum[a-4]) + pos[4:]
+                if pos not in posTostate.keys():
+                    T[s][a][0] = 1
+                    R[s][a][0] = -1
+                    print(f"transition {s} {a} 0 {R[s][a][0]} {T[s][a][0]}")
+
                 else:
-                    if not pos in posTostate.keys():                   # Episode Ends, Player has gone out of the field
-                        s_dash = 0  
-                    else:                
-                        s_dash = posTostate[pos]
-                    T[s][a][s_dash] = 1-p
-                    T[s][a][0] = p                                     # Losing the ball directly
-            
-            # Passing Ball
+                    #Player moving with Ball                    
+                    if pos[6]=="2":         
+                        for i, prob in enumerate(opp_move_prob):
+                            new_pos = pos[:4] + numTopos(int(pos[4:6]) + movePosnum[i]) + pos[6:]
+                            if new_pos not in posTostate.keys():
+                                continue
+
+                            if check_tackling(pos, new_pos):                    # Tackling Condition
+                                pass
+                            else:                
+                                s_dash = posTostate[new_pos]
+                                T[s][a][s_dash] = (1-2*p)*prob                  # Succesfull movement
+                                print(f"transition {s} {a} {s_dash} {R[s][a][s_dash]} {T[s][a][s_dash]}")
+                        T[s][a][0] = 2*p                                        # Losing the ball directly
+                        T[s][a][0] = -1
+                        print(f"transition {s} {a} 0 {R[s][a][0]} {T[s][a][0]}")
+
+                    # Player moving without ball
+                    else:
+                        for i, prob in enumerate(opp_move_prob):
+                            new_pos = pos[:4] + numTopos(int(pos[4:6]) + movePosnum[i]) + pos[6:]
+                            if not new_pos in posTostate.keys():                # Episode Ends, Player has gone out of the field
+                                continue
+                       
+                            s_dash = posTostate[new_pos]
+                            T[s][a][s_dash] = (1-p)*prob                        # Succesfull movement
+                            print(f"transition {s} {a} {s_dash} {R[s][a][s_dash]} {T[s][a][s_dash]}")
+                        T[s][a][0] = p                                          # Losing the ball directly
+                        print(f"transition {s} {a} 0 {R[s][a][0]} {T[s][a][0]}")
+
+                """
+                Passing
+                """    
             elif a==8:    
                 pos = stateTopos[s]         
                 pos = pos[:6] + str(3-int(pos[6]))                   
                 for i, prob in enumerate(opp_move_prob):
                     new_pos = pos[:4] + numTopos(int(pos[4:6]) + movePosnum[i]) + pos[6:] 
-                    s_dash = posTostate[new_pos]      
-                    T[s][a][s_dash] = pass_prob(new_pos, q)*prob
-                T[s][a][0] = 
+                    if new_pos not in posTostate.keys():
+                        continue
+                    s_dash = posTostate[new_pos]    
+                    p_prob =  pass_prob(new_pos, q)
+                    T[s][a][s_dash] = p_prob*prob
                     print(f"transition {s} {a} {s_dash} {R[s][a][s_dash]} {T[s][a][s_dash]}")
-            # Shooting
+                    T[s][a][0] += (1-prob)*prob
+                print(f"transition {s} {a} 0 {R[s][a][0]} {T[s][a][0]}")
+            
+
+                """
+                Shooting
+                """
             elif a==9:
                 pos = stateTopos[s]
                 print(f"transition {s} {a} {s_dash} {R[s][a][s_dash]} {T[s][a][s_dash]}")
