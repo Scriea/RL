@@ -43,7 +43,6 @@ if __name__ == "__main__":
     S, _, _ = read_opponent(PATH_OPPONENET)
 
     for i in range(1,8193):
-        print(S[i], P[i], V[i])
-
+        print(S[i], P[i], f'{V[i]:.6f}')
 
 
