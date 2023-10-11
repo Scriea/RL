@@ -28,6 +28,34 @@ posToCoor= {"01": (0,0),
             "16": (3,3)
             }
 
+
+def check_collinear(pos)-> bool:
+    pos_P1 = posToCoor(pos[0:2])
+    pos_P2 = posToCoor(pos[2:4])
+    pos_R = posToCoor(pos[4:6])
+    return (pos_P1[1]- pos_P2[1])/(pos_P1[0]-pos_P2[0])== (pos_P1[1]- pos_R[1])/(pos_P1[0]-pos_R[0])
+
+def pass_prob(pos, q)-> float:
+    pos_P1 = posToCoor(pos[0:2])
+    pos_P2 = posToCoor(pos[2:4])
+    pos_R = posToCoor(pos[4:6])
+
+    if check_collinear(pos):
+        return 0.5*(q- 0.1*max(abs(pos_P1[0]-pos_P2[0]), abs(pos_P1[1]-pos_P2[1])))
+    else:
+        return (q- 0.1*max(abs(pos_P1[0]-pos_P2[0]), abs(pos_P1[1]-pos_P2[1])))
+
+def shooting_prob(pos, q)->float:
+    pos_P1 = posToCoor(pos[0:2])
+    pos_P2 = posToCoor(pos[2:4])
+    pos_R = posToCoor(pos[4:6])
+
+    x = pos_P1[0] if pos[6]=="1" else pos_P2[0]
+    if int(pos[4:6]) in [8,12]:
+        return 0.5*(q - 0.2*(3-x))
+    else:
+        return (q - 0.2*(3-x))
+
 def read_opponent(path):
     stateTopos = {0:"0", 8193:"1"}                               
     posTostate = {"0000000":0, "1000000": 8193}
@@ -45,14 +73,6 @@ def read_opponent(path):
             i+=1
     return stateTopos, posTostate, np.array(opp_move)
 
-def choose_direction(movement_prob):
-    rand_num = np.random.random()           # Generate a random number in [0,1]
-    cumulative_prob = 0
-    for i, prob in enumerate(movement_prob):
-        cumulative_prob += prob
-        if rand_num <= cumulative_prob:
-            return i
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--opponent", required= True, type= str, help="Path to opponents Policy")
@@ -67,72 +87,80 @@ if __name__ == "__main__":
     """
     Encoding
     """
-
     print("numStates 8194")             # Game Positions(8192) + Win state(1) + Lose state(1)
     print("numActions 10")
-    ## Endstates
-    print("end 0 8193")
+    print("end 0 8193")                 # End States, Winning State, Losing State
 
     #Transitions
     T = np.zeros((8194, 10, 8194))
     R = np.zeros((8194, 10, 8194))
 
     for s in range(1, 8193):
-        pos = stateTopos[s]
         opp_move_prob = opp_move[s-1]
         for a in range(10):
             # Moving Player 1
             if a in [0,1,2,3]:  
                 # Player has ball - tackling possible                        
+                pos = stateTopos[s]
+                pos = numTopos(int(pos[:2])+movePosnum[a]) + pos[2:]
                 if pos[6]=="1":                         
-                        if False:                                          # Trackling Condition
-                            pass
-                        else:
-                            pos = numTopos(int(pos[:2])-movePosnum[a]) + pos[2:]
-                            for i, prob in enumerate(opp_move_prob):
-                                pos = pos[:4] + numTopos(int(pos[4:6])- movePosnum[i]) + pos[6:]
-                                if not pos in posTostate.keys():               # Episode Ends, Player has gone out of the field
-                                    s_dash = 0  
-                                else:                
-                                    s_dash = posTostate[pos]
-                                T[s][a][s_dash] = (1-2*p)*prob                 # Succesfull movement
-                                T[s][a][0] = 2*p*prob                          # Losing the ball directly
-                
-                # Player without ball
-                else:
-                    pos = numTopos(int(pos[:2])-movePosnum[a]) + pos[2:]
                     for i, prob in enumerate(opp_move_prob):
-                        pos = pos[:4] + numTopos(int(pos[4:6])- movePosnum[i]) + pos[6:]
-                        if not pos in posTostate.keys():        # Episode Ends, Player has gone out of the field
+                        new_pos = pos[:4] + numTopos(int(pos[4:6]) + movePosnum[i]) + pos[6:]
+                        if not pos in posTostate.keys():               # Episode Ends, Player has gone out of the field
                             s_dash = 0  
                         else:                
-                            s_dash = posTostate[pos]
-                        T[s][a][s_dash] = (1-p)*prob                 # Succesfull movement
-                        T[s][a][0] = p*prob                          # Losing the ball directly
+                            s_dash = posTostate[new_pos]
+                        T[s][a][s_dash] = (1-2*p)*prob                 # Succesfull movement
+                    T[s][a][0] = 2*p                                   # Losing the ball directly
+
+                # Player without ball
+                else:
+                    for i, prob in enumerate(opp_move_prob):
+                        new_pos = pos[:4] + numTopos(int(pos[4:6]) + movePosnum[i]) + pos[6:]
+                        if not pos in posTostate.keys():            # Episode Ends, Player has gone out of the field
+                            s_dash = 0  
+                        else:                
+                            s_dash = posTostate[new_pos]
+                        T[s][a][s_dash] = (1-p)*prob                # Succesfull movement
+                    T[s][a][0] = p                                  # Losing the ball directly
             
             # Moving Player 2       
             elif a in [4,5,6,7]:                            
-                if pos[6]=="2":                             # Player has ball,
-                        pass  
+                pos = stateTopos[s]
+                pos = numTopos(int(pos[:2])+movePosnum[a-4]) + pos[2:]
+                if pos[6]=="2":                                         # Player has ball
+                    for i, prob in enumerate(opp_move_prob):
+                        if True:                                        # Tackling Condition
+                            pass                        
+                        new_pos = pos[:4] + numTopos(int(pos[4:6]) + movePosnum[i]) + pos[6:]
+                        if not pos in posTostate.keys():               # Episode Ends, Player has gone out of the field
+                            s_dash = 0  
+                        else:                
+                            s_dash = posTostate[new_pos]
+                        T[s][a][s_dash] = (1-2*p)*prob                 # Succesfull movement
+                    T[s][a][0] = 2*p                                   # Losing the ball directly
+                
                 else:
-                    pos = pos[0:2] + numTopos(int(pos[2:4])-movePosnum[a-4]) + pos[4:]
-                    if not pos in posTostate.keys():        # Episode Ends, Player has gone out of the field
+                    if not pos in posTostate.keys():                   # Episode Ends, Player has gone out of the field
                         s_dash = 0  
                     else:                
                         s_dash = posTostate[pos]
                     T[s][a][s_dash] = 1-p
-                    T[s][a][0] = p                           # Losing the ball directly
+                    T[s][a][0] = p                                     # Losing the ball directly
             
             # Passing Ball
-            elif a==8:                                       
-                pass
+            elif a==8:    
+                pos = stateTopos[s]         
+                pos = pos[:6] + str(3-int(pos[6]))                   
+                for i, prob in enumerate(opp_move_prob):
+                    new_pos = pos[:4] + numTopos(int(pos[4:6]) + movePosnum[i]) + pos[6:] 
+                    s_dash = posTostate[new_pos]      
+                    T[s][a][s_dash] = pass_prob(new_pos, q)*prob
+                T[s][a][0] = 
+                    print(f"transition {s} {a} {s_dash} {R[s][a][s_dash]} {T[s][a][s_dash]}")
             # Shooting
             elif a==9:
-                pass
-
-    for s in range(8194):
-        for a in range(10):
-            for s_dash in range(8194):
+                pos = stateTopos[s]
                 print(f"transition {s} {a} {s_dash} {R[s][a][s_dash]} {T[s][a][s_dash]}")
 
     print('mdptype episodic')
