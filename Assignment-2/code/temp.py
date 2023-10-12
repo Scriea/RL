@@ -1,41 +1,24 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
-def read_opponent(path):
-    stateTopos = {0:"0", 8193:"1"}                               
-    posTostate = {"0000000":0, "1000000": 8193}
-    opp_move = []
-    i= 1
-    with open(path) as f:
-        f.readline()
-        temp = f.readline()
-        while temp:
-            te = temp.split()
-            stateTopos[i] = te[0]
-            posTostate[te[0]] = i
-            opp_move.append([ float(i) for i in te[1:]])
-            temp = f.readline()
-            i+=1
-    return stateTopos, posTostate, np.array(opp_move)
+V_p = [0.700000, 0.286720, 0.180000, 0.126000, 0.108000, 0.100000]
+V_q = [0.080000, 0.126000, 0.200000, 0.300000, 0.400000]
+p = [0, 0.1, 0.2, 0.3, 0.4, 0.5]
+q = [0.6,0.7,0.8,0.9,1]
+
+#plt.figure(figsize=(12, 10))
+plt.plot(p, V_p, marker='o')
+plt.title("State Value vs p")
+plt.xlabel("p")
+plt.xticks(p)
+plt.savefig("Graph 1.png")
+plt.clf()
 
 
-
-stateTopos, posTostate, opp_move = read_opponent("./data/football/test-1.txt")
-
-print(posTostate["0102041"])
-
-
-# def check_collinear(pos) -> bool:
-#     pos_P1 = posToCoor[pos[0:2]]
-#     pos_P2 = posToCoor[pos[2:4]]
-#     pos_R = posToCoor[pos[4:6]]
-    
-#     if abs(dist(pos_P1, pos_R) + dist(pos_P2, pos_R)- dist(pos_P1, pos_P2)) < 1e-3:             # Defender Lies between
-#         if pos_P1[0] == pos_P2[0]:
-#             return True
-#         elif pos_P1[1] == pos_P2[1]:
-#             return True
-#         elif abs(pos_P1[1] - pos_P2[1]) == abs(pos_P1[0] - pos_P2[0]):
-#             return True
-#         else:
-#             return False
-#     return False
+# plt.figure(figsize=(12, 10))
+plt.plot(q, V_q, marker='o')
+plt.title("State Value vs q")
+plt.xticks(q)
+plt.xlabel("q")
+plt.savefig("Graph 2.png")
+plt.clf()

@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 from pulp import *
-np.random.seed(37)
+np.random.seed(30)
 
 class MDP:
     def __init__(self, args, pol=None):
@@ -22,20 +22,25 @@ class MDP:
         """
         Value Iteration
         """
-        V = np.random.random_sample(self.n)     # Value Function Initialization, Vo
+        # V = np.random.random_sample(self.n)     # Value Function Initialization, Vo
+        V = np.zeros(self.n)
+        temp = None
         while True:    
             temp = np.sum(self.T*(self.R + self.discount*V), axis=2)
             V_temp = np.max(temp,axis=1)
-            P_temp = np.argmax(temp, axis=1)    # Optimal policy            
+            
             for s in range(self.n):
                 if s in self.E:
                     V_temp[s] = 0
                     V[s] = 0
             if np.linalg.norm(V_temp - V)<epsilon:
-                self.V = V_temp
-                self.P = P_temp
-                return V_temp, P_temp
+                V = V_temp
+                break
             V = V_temp
+        P = np.argmax(temp, axis=1)    # Optimal policy   
+        self.V = V
+        self.P = P
+        return V, P         
     
     def LP(self) -> tuple:
         """
