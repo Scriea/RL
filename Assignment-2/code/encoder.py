@@ -74,7 +74,7 @@ def check_tackling(pos, new_pos)-> bool:
     pos_P2_f = int(new_pos[2:4])
     pos_R_f = int(new_pos[4:6])
     if new_pos[6]=="1":
-        if pos_P1_f == pos_R_f:                                # Check - share same square
+        if pos_P1_f == pos_R_f:                                       # Check - share same square
             return True
         if pos_P1_i == pos_R_f and pos_P1_f==pos_R_i:                 # Check - Cross
             return True
@@ -83,21 +83,37 @@ def check_tackling(pos, new_pos)-> bool:
             return True
         if pos_P2_i == pos_R_f and pos_P2_f==pos_R_i:
             return True
-        
     return False
     
-def check_collinear(pos)-> bool:
+# def check_collinear(pos)-> bool:
 
-    """
-    Simplest way of checking both collinearity and
-    that defender lies between players is using
-    distances among them.
-    """
+#     """
+#     Simplest way of checking both collinearity and
+#     that defender lies between players is using
+#     distances among them.
+#     """
+#     pos_P1 = posToCoor[pos[0:2]]
+#     pos_P2 = posToCoor[pos[2:4]]
+#     pos_R = posToCoor[pos[4:6]]
+
+#     return abs(dist(pos_P1, pos_R) + dist(pos_P2, pos_R)- dist(pos_P1, pos_P2)) < 1e-3
+
+
+def check_collinear(pos) -> bool:
     pos_P1 = posToCoor[pos[0:2]]
     pos_P2 = posToCoor[pos[2:4]]
     pos_R = posToCoor[pos[4:6]]
-
-    return (dist(pos_P1, pos_R) + dist(pos_P2, pos_R)- dist(pos_P1, pos_P2)) < 1e-5 
+    
+    if abs(dist(pos_P1, pos_R) + dist(pos_P2, pos_R)- dist(pos_P1, pos_P2)) < 1e-3:             # Defender Lies between
+        if pos_P1[0] == pos_P2[0]:
+            return True
+        elif pos_P1[1] == pos_P2[1]:
+            return True
+        elif abs(pos_P1[1] - pos_P2[1]) == abs(pos_P1[0] - pos_P2[0]):
+            return True
+        else:
+            return False
+    return False
 
 def pass_prob(pos, q)-> float:
     pos_P1 = posToCoor[pos[0:2]]
@@ -179,7 +195,7 @@ if __name__ == "__main__":
                     #Player moving with Ball                    
                     if pos[6]=="1":         
                         for i, prob in enumerate(opp_move_prob):
-                            if not DefernderInField(pos, i): 
+                            if not DefernderInField(pos, i) or prob ==0: 
                                 continue
                             new_pos = p_pos[:4] + numTopos(int(p_pos[4:6]) + movePosnum[i]) + p_pos[6:]
                             s_dash = posTostate[new_pos]
@@ -200,7 +216,7 @@ if __name__ == "__main__":
                     # Player moving without ball
                     else:
                         for i, prob in enumerate(opp_move_prob):
-                            if not DefernderInField(pos, i):
+                            if not DefernderInField(pos, i) or prob == 0:
                                 continue
                             new_pos = p_pos[:4] + numTopos(int(p_pos[4:6]) + movePosnum[i]) + p_pos[6:]
                             s_dash = posTostate[new_pos]
@@ -222,7 +238,7 @@ if __name__ == "__main__":
                     #Player moving with Ball                    
                     if pos[6]=="2":       
                         for i, prob in enumerate(opp_move_prob):
-                            if not DefernderInField(pos, i):
+                            if not DefernderInField(pos, i) or prob ==0:
                                 continue
                             new_pos = p_pos[:4] + numTopos(int(p_pos[4:6]) + movePosnum[i]) + p_pos[6:]
                             s_dash = posTostate[new_pos]
@@ -239,7 +255,7 @@ if __name__ == "__main__":
                     # Player moving without ball
                     else:
                         for i, prob in enumerate(opp_move_prob):
-                            if not DefernderInField(pos, i):
+                            if not DefernderInField(pos, i) or prob ==0:
                                 continue
                             new_pos = p_pos[:4] + numTopos(int(p_pos[4:6]) + movePosnum[i]) + p_pos[6:]
                             s_dash = posTostate[new_pos]
@@ -255,7 +271,7 @@ if __name__ == "__main__":
                 pos = stateTopos[s]         
                 pos = pos[:6] + str(3-int(pos[6]))                   
                 for i, prob in enumerate(opp_move_prob):
-                    if not DefernderInField(pos, i):
+                    if not DefernderInField(pos, i)or prob ==0:
                         continue
                     new_pos = pos[:4] + numTopos(int(pos[4:6]) + movePosnum[i]) + pos[6] 
                     s_dash = posTostate[new_pos]    
@@ -264,14 +280,14 @@ if __name__ == "__main__":
                     print(f"transition {s} {a} {s_dash} 0 {T[s][a][s_dash]}")
                     T[s][a][0] += (1.0-s_prob)*prob
                 print(f"transition {s} {a} 0 0 {T[s][a][0]}")
-
+ 
                 """
                 Shooting
                 """
             else:
                 pos = stateTopos[s]
                 for i, prob in enumerate(opp_move_prob):
-                    if not DefernderInField(pos, i):
+                    if not DefernderInField(pos, i) or prob ==0:
                         continue
                     new_pos = pos[:4] + numTopos(int(pos[4:6]) + movePosnum[i]) + pos[6:] 
                     p_prob =  shooting_prob(new_pos, q)
