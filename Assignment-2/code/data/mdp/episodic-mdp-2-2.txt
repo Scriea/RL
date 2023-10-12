@@ -1,4 +1,4 @@
-numStates 2
+wnumStates 2
 numActions 2
 end 0
 transition 1 0 1 0.9309297727238344 0.6539263377345379
