@@ -60,19 +60,16 @@ posToCoor= {"01": (0,0),
             }
 
 def check_tackling(pos, new_pos)-> bool:
-    """
-    If player share same square
-    """
     pos_P1_i = int(pos[0:2])
     pos_P2_i = int(pos[2:4])
     pos_R_i = int(pos[4:6])
-    pos_P1_f = int(new_pos[0:2])
+    pos_P1_f = int(new_pos[0:2])        
     pos_P2_f = int(new_pos[2:4])
     pos_R_f = int(new_pos[4:6])
     if new_pos[6]=="1":
-        if new_pos[0:2] == new_pos[4:6]:
+        if new_pos[0:2] == new_pos[4:6]:                                # Check - share same square
             return True
-        elif pos_P1_i == pos_R_f and pos_P1_f==pos_R_i:
+        elif pos_P1_i == pos_R_f and pos_P1_f==pos_R_i:                 # Check - Cross
             return True
     else:
         if new_pos[2:4] == new_pos[4:6]:
@@ -85,7 +82,11 @@ def check_collinear(pos)-> bool:
     pos_P1 = posToCoor[pos[0:2]]
     pos_P2 = posToCoor[pos[2:4]]
     pos_R = posToCoor[pos[4:6]]
-    return (pos_P1[1]- pos_P2[1])*(pos_P1[0]-pos_R[0]) == (pos_P1[1]- pos_R[1])*(pos_P1[0]-pos_P2[0])
+    """
+    Check if area of triangle
+    formed by 3 points is zero
+    """
+    return pos_P1[0]*(pos_P2[1] - pos_R[1]) + pos_P2[0]*(pos_R[1] - pos_P1[1]) + pos_R[0]*(pos_P1[1] - pos_P2[1]) == 0        
 
 def pass_prob(pos, q)-> float:
     pos_P1 = posToCoor[pos[0:2]]
@@ -106,7 +107,13 @@ def shooting_prob(pos, q)->float:
         return 0.5*(q - 0.2*(3-x))
     else:
         return (q - 0.2*(3-x))
-
+    
+def get_pos(pos):
+    if int(pos[0:2]) > int(pos[2:4]):
+        return pos[2:4] + pos[0:2] + pos[4:]
+    else:
+        return pos
+    
 def read_opponent(path):
     stateTopos = {0:"0", 8193:"1"}                               
     posTostate = {"0000000":0, "1000000": 8193}
@@ -154,7 +161,7 @@ if __name__ == "__main__":
                 Moving Player 1
                 """ 
                 pos = stateTopos[s]
-                if not inField(pos, a):
+                if not inField(pos, a):                                         # Check if Player moves out of field 
                     T[s][a][0] = 1
                     print(f"transition {s} {a} 0 {R[s][a][0]} {T[s][a][0]}")
                 else:
@@ -163,7 +170,7 @@ if __name__ == "__main__":
                     #Player moving with Ball                    
                     if pos[6]=="1":         
                         for i, prob in enumerate(opp_move_prob):
-                            if not DefernderInField(pos, i):
+                            if not DefernderInField(pos, i):                    # Check if defender moves out of field
                                 continue
                             new_pos = p_pos[:4] + numTopos(int(p_pos[4:6]) + movePosnum[i]) + p_pos[6:]
                             s_dash = posTostate[new_pos]
@@ -175,7 +182,7 @@ if __name__ == "__main__":
                             else:                
                                 T[s][a][s_dash] = (1-2*p)*prob                  # Succesfull movement
                                 print(f"transition {s} {a} {s_dash} {R[s][a][s_dash]} {T[s][a][s_dash]}")
-                                T[s][a][0] += 2*p*prob                                        # Losing the ball directly
+                                T[s][a][0] += 2*p*prob                          # Losing the ball directly
                         print(f"transition {s} {a} 0 {R[s][a][0]} {T[s][a][0]}")
 
                     # Player moving without ball
@@ -187,14 +194,15 @@ if __name__ == "__main__":
                             s_dash = posTostate[new_pos]
                             T[s][a][s_dash] = (1-p)*prob                        # Succesfull movement
                             print(f"transition {s} {a} {s_dash} {R[s][a][s_dash]} {T[s][a][s_dash]}")
-                            T[s][a][0] += p*prob                                        # Losing the ball directly
+                        T[s][a][0] = p                                          # Losing the ball directly
                         print(f"transition {s} {a} 0 {R[s][a][0]} {T[s][a][0]}")
 
             elif a in [4,5,6,7]: 
                 """
                 Motion Player 2
                 """    
-                pos = stateTopos[s]   
+                pos = stateTopos[s] 
+                # pos = get_pos(pos)  
                 if not inField(pos, a):
                     T[s][a][0] = 1
                     print(f"transition {s} {a} 0 {R[s][a][0]} {T[s][a][0]}")      
@@ -206,7 +214,7 @@ if __name__ == "__main__":
                             if not DefernderInField(pos, i):
                                 continue
                             new_pos = p_pos[:4] + numTopos(int(p_pos[4:6]) + movePosnum[i]) + p_pos[6:]
-
+                            s_dash = posTostate[new_pos]
                             if check_tackling(pos, new_pos):                    # Tackling Condition
                                 T[s][a][s_dash] = (0.5-p)*prob
                                 print(f"transition {s} {a} {s_dash} {R[s][a][s_dash]} {T[s][a][s_dash]}")
